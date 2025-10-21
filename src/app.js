@@ -14,6 +14,8 @@ app.use(cors({
     credentials: true,
 }));
 
+
+
 // Body Parsers
 app.use(express.json({ limit: '100kb' }));
 app.use(urlencoded({ extended: true, limit: '100kb' }));
