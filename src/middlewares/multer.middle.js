@@ -1,16 +1,15 @@
 import multer from "multer";
 
+// Creating storage engine
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, "./public/temp")  // specify your upload directory here, cb is a callback
+    destination: function (req, file, cb) {  // where the uploaded file will be saved
+        cb(null /* No error */, "./public/temp")  // cb is a callback
     },
 
-    filename: function (req, file, cb) {
+    filename: function (req, file, cb) { // what the uploaded file will be named
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9) // to make filename unique
         
-        cb(null, file.fieldname + '-' + uniqueSuffix)
-
-        console.log('Multer :: File uploaded:', file.url);
+        cb(null, file.fieldname + '-' + uniqueSuffix) // e.g., avatar-1632345678901-123456789
         
     }
 })

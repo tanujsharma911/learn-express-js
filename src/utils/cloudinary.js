@@ -14,9 +14,7 @@ const uploadOnCloudinary = async (filePath) => {  // getting file local path
             throw new Error('File path is required for upload');
         }
 
-        const result = await cloudinary.v2.uploader.upload(filePath, {
-            resource_type: "auto"
-        });
+        const result = await cloudinary.uploader.upload(filePath);
 
         // delete the file from local storage after upload
         fs.unlinkSync(filePath);

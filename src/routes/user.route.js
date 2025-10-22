@@ -10,7 +10,9 @@ router.route("/register").post(
         { name: "avatar", maxCount: 1 }, 
         { name: "coverImage", maxCount: 1 }
     ]), 
+    
     registerUser  // controller to handle user registration, executes after file upload
 );
+
 
 export default router;

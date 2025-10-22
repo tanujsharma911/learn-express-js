@@ -2,7 +2,18 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { User } from '../models/user.model.js';
-import { uploadToCloudinary } from '../utils/cloudinary.js';
+import { uploadOnCloudinary } from '../utils/cloudinary.js';
+
+const generateAccessAndRefreshTokens = (user) => {
+    try {
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
+        return { accessToken, refreshToken };
+    } catch (error) {
+        console.error("Error generating tokens:", error);
+        throw new ApiError(500, "Internal server error :: token generation failed");
+    }
+}
 
 const registerUser = asyncHandler(async (req, res, next) => {
 
@@ -45,7 +56,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     }
 
     // Upload avatar to Cloudinary
-    const avatarUploadResult = await uploadToCloudinary(avatarLocalPath);
+    const avatarUploadResult = await uploadOnCloudinary(avatarLocalPath);
 
     // Check upload results
     if (!avatarUploadResult?.secure_url) {
@@ -75,6 +86,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     }
 
     // Create new user in DB
+    // password will be hashed via pre-save hook
     const user = await User.create(newUser);
 
 
@@ -84,10 +96,68 @@ const registerUser = asyncHandler(async (req, res, next) => {
         throw new ApiError(500, "User creation failed");
     }
 
+
     res.status(201).json(
         new ApiResponse(201, "User registered successfully", createdUser)
     );
 
 });
 
-export { registerUser }
+const loginUser = asyncHandler(async (req, res, next) => {
+    // get username/email and password from req body
+    const { identifier, password } = req.body; // identifier can be username or email
+
+    if (!identifier || !password) {
+        throw new ApiError(422, "Identifier and password are required");
+    }
+
+    // find user is in DB
+    const user = await User.findOne({
+        $or: [
+            { username: identifier },
+            { email: identifier }
+        ]
+    });
+    console.log("user found:", user);
+
+    if (!user) {
+        throw new ApiError(401, "User not found");
+    }
+
+    // compare password using method created in model
+    const isPasswordValid = await user?.isPasswordCorrect(password);
+    if (!isPasswordValid) {
+        throw new ApiError(401, "Password is incorrect");
+    }
+    console.log("isPasswordValid:", isPasswordValid);
+
+    // if all ok, generate access and refresh tokens
+    const { accessToken, refreshToken } = generateAccessAndRefreshTokens(user);
+
+
+    // save refresh token in DB
+    user.refreshTokens = refreshToken;
+    await user.save({ validateBeforeSave: false }); // skip validation
+
+    // Remove password and refreshTokens from user object before sending response
+    delete user._doc.password;
+    delete user._doc.refreshTokens;
+
+    // send response with user data (without password) and tokens in cookies
+    const options = {
+        httpOnly: true,
+        secure: true,
+        sameSite: "Strict"
+    }
+    res.cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .status(200).json(new ApiResponse(200, "Login successful", { user, accessToken, refreshToken }));
+
+});
+
+const logoutuser = asyncHandler(async (req, res, next) => {
+    
+
+});
+
+export { registerUser, loginUser, logoutuser };
