@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { registerUser } from "../controllers/user.controller.js";
+import { registerUser, loginUser, logoutUser } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middle.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -14,5 +15,10 @@ router.route("/register").post(
     registerUser  // controller to handle user registration, executes after file upload
 );
 
+// localhost:3000/api/users/login
+router.route("/login").post(loginUser);
+
+// localhost:3000/api/users/logout
+router.route("/logout").post(verifyJWT, logoutUser);
 
 export default router;

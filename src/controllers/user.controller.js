@@ -15,7 +15,7 @@ const generateAccessAndRefreshTokens = (user) => {
     }
 }
 
-const registerUser = asyncHandler(async (req, res, next) => {
+const registerUser = asyncHandler(async (req, res, _) => {
 
     // Extract body data and file paths from req
     const newUser = {
@@ -103,7 +103,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
 });
 
-const loginUser = asyncHandler(async (req, res, next) => {
+const loginUser = asyncHandler(async (req, res, _) => {
     // get username/email and password from req body
     const { identifier, password } = req.body; // identifier can be username or email
 
@@ -155,9 +155,27 @@ const loginUser = asyncHandler(async (req, res, next) => {
 
 });
 
-const logoutuser = asyncHandler(async (req, res, next) => {
-    
+const logoutUser = asyncHandler(async (req, res, _) => {
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: { refreshTokens: "" }
+        },
+        {
+            new: true,
+        }
+    );
 
+    const options = {
+        httpOnly: true,
+        secure: true,
+        sameSite: "Strict"
+    };
+
+    res.status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, "Logout successful"));
 });
 
-export { registerUser, loginUser, logoutuser };
+export { registerUser, loginUser, logoutUser };

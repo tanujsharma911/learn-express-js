@@ -6,6 +6,11 @@ under developing...
 3. Creator dashboard
 4. Many more
 
+### End Points
+POST /api/users/register
+POST /api/users/login
+POST /api/users/logout
+
 ### Tech Stack
 MERN Stack
 
