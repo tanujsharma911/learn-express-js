@@ -1,3 +1,5 @@
+import jwt from "jsonwebtoken";
+
 import asyncHandler from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
@@ -118,7 +120,6 @@ const loginUser = asyncHandler(async (req, res, _) => {
             { email: identifier }
         ]
     });
-    console.log("user found:", user);
 
     if (!user) {
         throw new ApiError(401, "User not found");
@@ -129,7 +130,6 @@ const loginUser = asyncHandler(async (req, res, _) => {
     if (!isPasswordValid) {
         throw new ApiError(401, "Password is incorrect");
     }
-    console.log("isPasswordValid:", isPasswordValid);
 
     // if all ok, generate access and refresh tokens
     const { accessToken, refreshToken } = generateAccessAndRefreshTokens(user);
@@ -156,6 +156,7 @@ const loginUser = asyncHandler(async (req, res, _) => {
 });
 
 const logoutUser = asyncHandler(async (req, res, _) => {
+    // Clear refresh token from DB
     await User.findByIdAndUpdate(
         req.user._id,
         {
@@ -172,10 +173,52 @@ const logoutUser = asyncHandler(async (req, res, _) => {
         sameSite: "Strict"
     };
 
+    // removes a cookie from the user's browser
     res.status(200)
-    .clearCookie("accessToken", options)
-    .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, "Logout successful"));
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new ApiResponse(200, "Logout successful"));
 });
 
-export { registerUser, loginUser, logoutUser };
+const refreshAccessToken = asyncHandler(async (req, res, _) => {
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+    if (!incomingRefreshToken) {
+        throw new ApiError(401, "Refresh token is required");
+    }
+
+    try {
+        const decoded = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+    
+        // Find user by ID
+        const user = await User.findById(decoded?.userId).select("-password -refreshTokens");
+    
+        if (!user) {
+            throw new ApiError(401, "Unauthorized: User not found");
+        }
+    
+        if(user.refreshTokens !== incomingRefreshToken) {
+            throw new ApiError(401, "Invalid refresh token");
+        }
+    
+        // Generate new access token
+        const { accessToken, refreshToken } = generateAccessAndRefreshTokens(user);
+    
+        // res.status(200).json(new ApiResponse(200, "Access token refreshed successfully", { accessToken }));
+        res.cookie("accessToken", accessToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "Strict"
+        })
+        .cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "Strict"
+        })
+        .status(200).json(new ApiResponse(200, "Access token refreshed successfully", { accessToken, refreshToken }));
+    } catch (error) {
+        throw new ApiError(401, `Unauthorized: Invalid token - ${error?.message}`); 
+    }
+});
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken };

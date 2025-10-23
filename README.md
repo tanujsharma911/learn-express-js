@@ -7,12 +7,8 @@ under developing...
 4. Many more
 
 ### End Points
-POST /api/users/register
-POST /api/users/login
-POST /api/users/logout
+```POST /api/users/register```
 
-### Tech Stack
-MERN Stack
+```POST /api/users/login```
 
-### status code
-1. 422 - missing fields
+```POST /api/users/logout```
