@@ -59,10 +59,13 @@ const userSchema = new mongoose.Schema(
 
 // mongoose middleware to hash password before saving
 userSchema.pre("save", async function (next) {
+
     if (this.isModified("password")) {  // checks whether the password field was changed or set for the first time.
+        
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);  // It takes the plain password and hashes it with the generated salt $2b$10$xC3...
     }
+
     next(); // Calls the next middleware or completes the save process.
 });
 

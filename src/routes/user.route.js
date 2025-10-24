@@ -25,4 +25,7 @@ router.route("/logout").post(verifyJWT, logoutUser);
 // localhost:3000/api/users/refresh-token
 router.route("/refresh-token").post(refreshAccessToken);
 
+// localhost:3000/api/users/change-password
+router.route("/change-password").post(verifyJWT, changePassword);
+
 export default router;

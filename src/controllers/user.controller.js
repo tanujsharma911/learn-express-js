@@ -221,4 +221,37 @@ const refreshAccessToken = asyncHandler(async (req, res, _) => {
     }
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+const changePassword = asyncHandler(async (req, res, _) => {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+        throw new ApiError(422, "Current password and new password are required");
+    }
+
+    if (newPassword.length < 6) {
+        throw new ApiError(422, "New password must be at least 6 characters long");
+    }
+
+    // Find user in DB
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    // Check if current password is correct
+    const isPasswordValid = await user.isPasswordCorrect(currentPassword);
+    if (!isPasswordValid) {
+        throw new ApiError(401, "Current password is incorrect");
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save({
+        validateBeforeSave: false // skip other validations
+    });
+
+    res.status(200).json(new ApiResponse(200, "Password changed successfully"));
+});
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken, changePassword };
