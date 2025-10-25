@@ -351,13 +351,37 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, "Updated susscessfully", user));
 });
 
+const getChannalDetails = asyncHandler(async (req, res) => {
+    let userId = req.params;
+
+    if (userId || !userId?.trim()) {
+        throw new ApiError(422, "User id is not submitted");
+    }
+
+    await User.aggregate([
+        {
+            $match: {
+                username: username
+            }
+        }, 
+        {
+            $lookup: {
+                frome: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers"
+            }
+        }
+    ])
+});
+
 export {
     registerUser,
     loginUser,
-    logoutUser, 
-    refreshAccessToken, 
-    changePassword, 
-    getUser, 
+    logoutUser,
+    refreshAccessToken,
+    changePassword,
+    getUser,
     updateUserDetails,
     updateUserAvatar,
     updateUserCoverImage
