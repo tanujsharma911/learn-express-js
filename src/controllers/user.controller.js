@@ -5,6 +5,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { User } from '../models/user.model.js';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshTokens = (user) => {
     try {
@@ -73,7 +74,7 @@ const registerUser = asyncHandler(async (req, res, _) => {
     const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
     if (coverImageLocalPath) {
         // Upload coverImage to Cloudinary
-        const coverImageUploadResult = await uploadToCloudinary(coverImageLocalPath);
+        const coverImageUploadResult = await uploadOnCloudinary(coverImageLocalPath);
 
         // Check upload results
         if (!coverImageUploadResult?.secure_url) {
@@ -302,9 +303,9 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         throw new ApiError(422, "Avatar image is required");
     }
 
-    const avatarUrl = uploadOnCloudinary(avatarLocalPath).url;
+    const avatarUploadResult = await uploadOnCloudinary(avatarLocalPath);
 
-    if (!avatarUrl) {
+    if (!avatarUploadResult?.secure_url) {
         throw new ApiError(500, "Avatar was not uploaded on cloudinary");
     }
 
@@ -312,7 +313,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         req.user._id,
         {
             $set: {
-                avatar: avatarUrl
+                avatar: avatarUploadResult.secure_url
             }
         },
         {
@@ -330,9 +331,9 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         throw new ApiError(422, "Cover image is required");
     }
 
-    const coverUrl = uploadOnCloudinary(imageLocalPath).url;
+    const coverUploadResult = await uploadOnCloudinary(imageLocalPath);
 
-    if (!coverUrl) {
+    if (!coverUploadResult?.secure_url) {
         throw new ApiError(500, "Cover image was not uploaded on cloudinary");
     }
 
@@ -340,7 +341,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         req.user._id,
         {
             $set: {
-                coverImage: coverUrl
+                coverImage: coverUploadResult.secure_url
             }
         },
         {
@@ -352,27 +353,118 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 });
 
 const getChannalDetails = asyncHandler(async (req, res) => {
-    let userId = req.params;
+    const { username } = req.params;
 
-    if (userId || !userId?.trim()) {
-        throw new ApiError(422, "User id is not submitted");
+    if (!username || !username?.trim()) {
+        throw new ApiError(422, "Username is required");
     }
 
-    await User.aggregate([
+    const channel = await User.aggregate([
         {
             $match: {
                 username: username
             }
-        }, 
+        },
         {
             $lookup: {
-                frome: "subscriptions",
-                localField: "_id",
-                foreignField: "channel",
+                localField: "_id",       // user id of channel (above username)
+                from: "subscriptions",
+                foreignField: "channel", // match channel id in subscriptions in channel key
                 as: "subscribers"
             }
+        },
+        {
+            $lookup: {
+                localField: "_id",
+                from: "subscriptions",
+                foreignField: "subscriber", // match channel id in subscriptions in subscriber key
+                as: "subscribedTo"
+            }
+        },
+        {
+            $addFields: {
+                subscribersCount: {
+                    $size: "$subscribers"
+                },
+                subscribedToCount: {
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                fullName: 1,
+                username: 1,
+                isSubscribed: 1,
+                subscribedToCount: 1,
+                subscribersCount: 1,
+                avatar: 1,
+                coverImage: 1,
+                createdAt: 1
+            }
         }
-    ])
+    ]);
+
+    if(!channel?.length){
+        throw new ApiError(404, "Channel does not exist");
+    }
+
+    res.status(200).json(new ApiResponse(200, "Channel fetched successfully", channel[0].watchHistory))
+});
+
+const getWatchHistory = asyncHandler(async (req, res) => {
+    const user = await User.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup: {
+                localField: "watchHistory",
+                from: "videos",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first: "$owner"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ]);
+
+    res.status(200).json(
+        new ApiResponse(200, "Watch history fetched successfully", user[0]?.watchHistory || [])
+    );
 });
 
 export {
@@ -384,7 +476,9 @@ export {
     getUser,
     updateUserDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
+    getChannalDetails,
+    getWatchHistory
 };
 
 /*
