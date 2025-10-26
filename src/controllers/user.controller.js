@@ -161,7 +161,7 @@ const logoutUser = asyncHandler(async (req, res, _) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set: { refreshTokens: "" }
+            $unset: { refreshTokens: 1 }
         },
         {
             new: true,
@@ -182,23 +182,30 @@ const logoutUser = asyncHandler(async (req, res, _) => {
 });
 
 const refreshAccessToken = asyncHandler(async (req, res, _) => {
-    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    const incomingRefreshToken = req.cookies.refreshToken;
 
     if (!incomingRefreshToken) {
         throw new ApiError(401, "Refresh token is required");
     }
 
+    console.log("incoming refresh: ", incomingRefreshToken)
+
     try {
         const decoded = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
 
         // Find user by ID
-        const user = await User.findById(decoded?.userId).select("-password -refreshTokens");
+        const user = await User.findById(decoded?.userId).select("-password");
+        console.log("\nuser: ", user)
 
         if (!user) {
             throw new ApiError(401, "Unauthorized: User not found");
         }
 
-        if (user.refreshTokens !== incomingRefreshToken) {
+        console.log("\nuser token: ", user.refreshTokens);
+
+
+        if (String(user.refreshTokens) !== String(incomingRefreshToken)) {
+            console.log("not same")
             throw new ApiError(401, "Invalid refresh token");
         }
 
@@ -321,6 +328,8 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         }
     ).select("-password -refreshToken");
 
+    //TODO: delete previous file
+
     res.status(200).json(new ApiResponse(200, "Updated susscessfully", user));
 });
 
@@ -348,6 +357,8 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
             new: true
         }
     ).select("-password -refreshToken");
+
+    //TODO: delete previous file
 
     res.status(200).json(new ApiResponse(200, "Updated susscessfully", user));
 });
@@ -412,7 +423,7 @@ const getChannalDetails = asyncHandler(async (req, res) => {
         }
     ]);
 
-    if(!channel?.length){
+    if (!channel?.length) {
         throw new ApiError(404, "Channel does not exist");
     }
 
