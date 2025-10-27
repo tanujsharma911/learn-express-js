@@ -427,7 +427,7 @@ const getChannalDetails = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Channel does not exist");
     }
 
-    res.status(200).json(new ApiResponse(200, "Channel fetched successfully", channel[0].watchHistory))
+    res.status(200).json(new ApiResponse(200, "Channel fetched successfully", channel[0]))
 });
 
 const getWatchHistory = asyncHandler(async (req, res) => {

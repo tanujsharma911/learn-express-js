@@ -1,0 +1,64 @@
+strict digraph "dependency-cruiser output"{
+    rankdir="LR" splines="true" overlap="false" nodesep="0.16" ranksep="1" fontname="Helvetica-bold" fontsize="9" style="rounded,bold,filled" fillcolor="#ffffff" compound="true"
+    node [shape="box" style="rounded, filled" height="0.2" color="black" fillcolor="#ffffcc" fontcolor="black" fontname="Helvetica" fontsize="9"]
+    edge [
+        arrowhead="normal",
+        arrowsize="0.9",
+        penwidth="2.5",
+        color="#00000050",
+        fontname="Open Sans",
+        fontsize="9"
+    ]
+
+    subgraph "cluster_src" {label="src" "src/app.js" [label=<app.js> tooltip="app.js" URL="src/app.js" ] }
+    "src/app.js" -> "src/routes/health.route.js"
+    "src/app.js" -> "src/routes/user.route.js"
+    subgraph "cluster_src" {label="src" "src/constants.js" [label=<constants.js> tooltip="constants.js" URL="src/constants.js" ] }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/controllers" {label="controllers" "src/controllers/comments.controller.js" [label=<comments.controller.js> tooltip="comments.controller.js" URL="src/controllers/comments.controller.js" ] } }
+    "src/controllers/comments.controller.js" -> "src/models/comment.model.js"
+    "src/controllers/comments.controller.js" -> "src/utils/ApiError.js"
+    "src/controllers/comments.controller.js" -> "src/utils/ApiResponse.js"
+    "src/controllers/comments.controller.js" -> "src/utils/asyncHandler.js"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/controllers" {label="controllers" "src/controllers/health.controller.js" [label=<health.controller.js> tooltip="health.controller.js" URL="src/controllers/health.controller.js" ] } }
+    "src/controllers/health.controller.js" -> "src/utils/ApiResponse.js"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/controllers" {label="controllers" "src/controllers/interaction.controller.js" [label=<interaction.controller.js> tooltip="interaction.controller.js" URL="src/controllers/interaction.controller.js" fillcolor="#ccffcc"] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/controllers" {label="controllers" "src/controllers/subscription.controller.js" [label=<subscription.controller.js> tooltip="subscription.controller.js" URL="src/controllers/subscription.controller.js" fillcolor="#ccffcc"] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/controllers" {label="controllers" "src/controllers/user.controller.js" [label=<user.controller.js> tooltip="user.controller.js" URL="src/controllers/user.controller.js" ] } }
+    "src/controllers/user.controller.js" -> "src/models/user.model.js"
+    "src/controllers/user.controller.js" -> "src/utils/ApiError.js"
+    "src/controllers/user.controller.js" -> "src/utils/ApiResponse.js"
+    "src/controllers/user.controller.js" -> "src/utils/asyncHandler.js"
+    "src/controllers/user.controller.js" -> "src/utils/cloudinary.js"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/controllers" {label="controllers" "src/controllers/video.controller.js" [label=<video.controller.js> tooltip="video.controller.js" URL="src/controllers/video.controller.js" ] } }
+    "src/controllers/video.controller.js" -> "src/models/user.model.js"
+    "src/controllers/video.controller.js" -> "src/models/video.model.js"
+    "src/controllers/video.controller.js" -> "src/utils/ApiError.js"
+    "src/controllers/video.controller.js" -> "src/utils/ApiResponse.js"
+    "src/controllers/video.controller.js" -> "src/utils/asyncHandler.js"
+    "src/controllers/video.controller.js" -> "src/utils/cloudinary.js"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/db" {label="db" "src/db/index.js" [label=<index.js> tooltip="index.js" URL="src/db/index.js" ] } }
+    "src/db/index.js" -> "src/constants.js"
+    subgraph "cluster_src" {label="src" "src/index.js" [label=<index.js> tooltip="index.js" URL="src/index.js" ] }
+    "src/index.js" -> "src/app.js"
+    "src/index.js" -> "src/db/index.js"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/middlewares" {label="middlewares" "src/middlewares/auth.middleware.js" [label=<auth.middleware.js> tooltip="auth.middleware.js" URL="src/middlewares/auth.middleware.js" ] } }
+    "src/middlewares/auth.middleware.js" -> "src/models/user.model.js"
+    "src/middlewares/auth.middleware.js" -> "src/utils/ApiError.js"
+    "src/middlewares/auth.middleware.js" -> "src/utils/asyncHandler.js"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/middlewares" {label="middlewares" "src/middlewares/multer.middle.js" [label=<multer.middle.js> tooltip="multer.middle.js" URL="src/middlewares/multer.middle.js" ] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/models" {label="models" "src/models/comment.model.js" [label=<comment.model.js> tooltip="comment.model.js" URL="src/models/comment.model.js" ] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/models" {label="models" "src/models/interactions.model.js" [label=<interactions.model.js> tooltip="interactions.model.js" URL="src/models/interactions.model.js" fillcolor="#ccffcc"] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/models" {label="models" "src/models/subscription.model.js" [label=<subscription.model.js> tooltip="subscription.model.js" URL="src/models/subscription.model.js" fillcolor="#ccffcc"] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/models" {label="models" "src/models/user.model.js" [label=<user.model.js> tooltip="user.model.js" URL="src/models/user.model.js" ] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/models" {label="models" "src/models/video.model.js" [label=<video.model.js> tooltip="video.model.js" URL="src/models/video.model.js" ] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/routes" {label="routes" "src/routes/health.route.js" [label=<health.route.js> tooltip="health.route.js" URL="src/routes/health.route.js" ] } }
+    "src/routes/health.route.js" -> "src/controllers/health.controller.js"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/routes" {label="routes" "src/routes/user.route.js" [label=<user.route.js> tooltip="user.route.js" URL="src/routes/user.route.js" ] } }
+    "src/routes/user.route.js" -> "src/controllers/user.controller.js"
+    "src/routes/user.route.js" -> "src/middlewares/auth.middleware.js"
+    "src/routes/user.route.js" -> "src/middlewares/multer.middle.js"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/utils" {label="utils" "src/utils/ApiError.js" [label=<ApiError.js> tooltip="ApiError.js" URL="src/utils/ApiError.js" ] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/utils" {label="utils" "src/utils/ApiResponse.js" [label=<ApiResponse.js> tooltip="ApiResponse.js" URL="src/utils/ApiResponse.js" ] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/utils" {label="utils" "src/utils/asyncHandler.js" [label=<asyncHandler.js> tooltip="asyncHandler.js" URL="src/utils/asyncHandler.js" ] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/utils" {label="utils" "src/utils/cloudinary.js" [label=<cloudinary.js> tooltip="cloudinary.js" URL="src/utils/cloudinary.js" ] } }
+}

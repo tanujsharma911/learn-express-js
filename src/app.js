@@ -25,8 +25,16 @@ app.use(cookieParser());
 
 // Routes
 import userRoutes from "./routes/user.route.js";
+import healthChecker from "./routes/health.route.js";
+import videoRouter from "./routes/video.route.js";
+import commentRouter from "./routes/comment.route.js";
+import interactionRouter from "./routes/interaction.route.js";
 
 // Routes Declaration
+app.use("/api/health", healthChecker);
 app.use("/api/users", userRoutes);
+app.use("/api/videos", videoRouter);
+app.use("/api/comments", commentRouter);
+app.use("/api/interaction", interactionRouter);
 
 export default app;
